@@ -66,8 +66,12 @@
         // 1. طلب الوصول إلى الكاميرا
         async function startCamera() {
             try {
-                // طلب الوصول إلى الكاميرا الأمامية إذا كانت متاحة (قد تختلف التسمية)
-                const constraints = { video: { facingMode: 'user' } }; 
+                // تعيين قيود للحصول على صورة واضحة ومستقرة
+                const constraints = { video: { 
+                    facingMode: 'user', // الكاميرا الأمامية
+                    width: { ideal: 640 }, 
+                    height: { ideal: 480 } 
+                } }; 
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
                 statusMessage.textContent = 'الكاميرا جاهزة للعمل.';
@@ -77,28 +81,33 @@
             }
         }
 
-        // 2. معالجة الالتقاط والإرسال
+        // 2. معالجة الالتقاط والإرسال (تم إضافة التأخير هنا)
         captureButton.addEventListener('click', () => {
             statusMessage.textContent = 'جاري الالتقاط... يرجى الانتظار.';
             captureButton.disabled = true;
 
-            // تحديد أبعاد الـ Canvas بنفس أبعاد الفيديو الحالي
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+            // 🛑 إضافة تأخير لمدة 500 مللي ثانية قبل الالتقاط 🛑
+            setTimeout(() => {
+                
+                // تحديد أبعاد الـ Canvas بنفس أبعاد الفيديو الحالي
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
 
-            // رسم إطار الفيديو الحالي على الـ Canvas
-            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                // رسم إطار الفيديو الحالي على الـ Canvas
+                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            // تحويل الصورة في الـ Canvas إلى Base64 (بصيغة JPEG)
-            const imageDataURL = canvas.toDataURL('image/jpeg', 0.8); // 0.8 هي جودة الصورة
+                // تحويل الصورة في الـ Canvas إلى Base64 (بصيغة JPEG)
+                const imageDataURL = canvas.toDataURL('image/jpeg', 0.8); // 0.8 هي جودة الصورة
 
-            // إرسال الصورة إلى الخادم
-            sendPhotoToServer(imageDataURL);
+                // إرسال الصورة إلى الخادم
+                sendPhotoToServer(imageDataURL);
+
+            }, 500); // 500 مللي ثانية (نصف ثانية)
         });
 
         // 3. دالة الإرسال للخادم الخلفي
         async function sendPhotoToServer(imageData) {
-            // 🛑 تم تعديل هذا السطر ليستخدم رابط Render الصحيح 🛑
+            // 🛑 تم تصحيح هذا الرابط ليطابق خادم Render 🛑
             const BACKEND_URL = 'https://vvvvvv-1.onrender.com/upload-photo'; 
             
             try {
